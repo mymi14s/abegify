@@ -32,14 +32,14 @@ services:
     <<: *common-setup
     restart: always
     ports:
-      - "8001:8001"
+      - "8002:8002"
     depends_on:
       - redis
     command: >
       sh -c "
       python manage.py migrate --noinput &&
       python manage.py collectstatic --noinput &&
-      uvicorn abegify.asgi:application --host 0.0.0.0 --port 8001 \
+      uvicorn abegify.asgi:application --host 0.0.0.0 --port 8002 \
       --workers 6 --timeout-keep-alive 60 \
       --access-log
       "
