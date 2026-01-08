@@ -1,0 +1,53 @@
+x-common-setup: &common-setup
+  build: .
+  restart: always
+  volumes:
+    - /var/www/abegify/static:/app/static
+    - /home/${USER}/sites/abegify/media:/app/media
+    - /home/${USER}/sites/abegify/logs:/app/logs
+  environment:
+    - DATABASE_NAME=${ABEGIFY_DB_NAME}
+    - DATABASE_USER=${ABEGIFY_DB_USER}
+    - DATABASE_PASSWORD=${ABEGIFY_DB_PASSWORD}
+    - DATABASE_HOST=${ABEGIFY_DB_HOST}
+    - DATABASE_PORT=${ABEGIFY_DB_PORT}
+    - SECRET_KEY=${ABEGIFY_DB_NAME}
+    - EMAIL_BACKEND=${ABEGIFY_EMAIL_BACKEND}
+    - EMAIL_HOST=${ABEGIFY_EMAIL_HOST}
+    - EMAIL_USE_SSL=${ABEGIFY_EMAIL_USE_SSL}
+    - EMAIL_PORT=${ABEGIFY_EMAIL_PORT}
+    - EMAIL_HOST_USER=${ABEGIFY_EMAIL_USER}
+    - EMAIL_HOST_PASSWORD=${ABEGIFY_EMAIL_HOST_PASSWORD}
+    - ALLOWED_HOSTS=${ABEGIFY_HOST}
+    - GOOGLE_TAG=${GOOGLE_TAG}
+  extra_hosts:
+    - "host.docker.internal:host-gateway"
+
+services:
+
+  redis:
+    image: redis:7
+    restart: always
+  web:
+    <<: *common-setup
+    restart: always
+    ports:
+      - "8001:8001"
+    depends_on:
+      - redis
+    command: >
+      sh -c "
+      python manage.py migrate --noinput &&
+      python manage.py collectstatic --noinput &&
+      uvicorn abegify.asgi:application --host 0.0.0.0 --port 8001 \
+      --workers 6 --timeout-keep-alive 60 \
+      --access-log
+      "
+
+  rq_worker:
+    <<: *common-setup
+    restart: always
+    command: python manage.py rqworker --job-class django_tasks.backends.rq.Job
+    depends_on:
+      - redis
+      - web

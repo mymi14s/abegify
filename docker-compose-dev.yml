@@ -1,0 +1,48 @@
+services:
+  web:
+    build:
+      context: .
+      dockerfile: dev.Dockerfile
+    command: sh -c "python manage.py migrate  --noinput && python manage.py collectstatic --noinput --settings=abegify.settings.test \
+            && uvicorn abegify.asgi:application --bind 0.0.0.0:8000  --workers 3 --timeout 60"
+    volumes:
+      - .:/app
+      - static_volume:/app/static
+      - media_volume:/app/media
+      - ./logs/django:/app/logs
+    extra_hosts:
+      - "host.docker.internal:host-gateway"
+    ports:
+      - "8000:8000"
+    environment:
+      - DATABASE_NAME=${ABEGIFY_DB_NAME}
+      - DATABASE_USER=${ABEGIFY_DB_USER}
+      - DATABASE_PASSWORD=${ABEGIFY_DB_PASSWORD}
+      - DATABASE_HOST=${ABEGIFY_DB_HOST}
+      - DATABASE_PORT=${ABEGIFY_DB_PORT}
+      - SECRET_KEY=43435geververver
+      - EMAIL_BACKEND=django.core.mail.backends.console.EmailBackend
+      - EMAIL_HOST=
+      - EMAIL_USE_TLS
+      - EMAIL_PORT
+      - EMAIL_HOST_USER=hello@example.com
+      - EMAIL_HOST_PASSWORD
+      - DEBUG=1
+
+  nginx:
+    image: nginx:1.25-alpine
+    restart: unless-stopped
+    ports:
+      - "80:80"
+    volumes:
+      - ./nginx/default.conf:/etc/nginx/conf.d/default.conf
+      - static_volume:/app/static
+      - media_volume:/app/media
+      - ./nginx/default.conf:/etc/nginx/conf.d/default.conf
+      - ./logs/nginx:/var/log/nginx
+    depends_on:
+      - web
+
+volumes:
+  static_volume:
+  media_volume:

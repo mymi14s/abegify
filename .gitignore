@@ -1,0 +1,112 @@
+# ==========================
+# Python / Django
+# ==========================
+
+# Byte-compiled / optimized / DLL files
+__pycache__/
+__pycache__
+__pycache__*
+*__pycache__
+/__pycache/*
+__pycache/*
+*.py[cod]
+*$py.class
+/static/
+
+# C extensions
+*.so
+
+# Distribution / packaging
+.Python
+env/
+env14/
+venv/
+venv*/
+build/
+develop-eggs/
+dist/
+downloads/
+eggs/
+.eggs/
+lib/
+lib64/
+parts/
+sdist/
+var/
+*.egg-info/
+.installed.cfg
+*.egg
+
+# Django stuff:
+*.log
+*.pot
+*.pyc
+*.pyo
+*.pyd
+db.sqlite3
+*.sqlite3
+media/
+staticfiles/
+.env
+.env.local
+.env.*.local
+
+# Pytest
+.cache/
+.pytest_cache/
+
+# MyPy
+.mypy_cache/
+.dmypy.json
+dmypy.json
+
+# VS Code / IDE
+.vscode/
+.idea/
+*.sublime-project
+*.sublime-workspace
+
+# ==========================
+# Node.js / Frontend (Vue.js, React)
+# ==========================
+
+# Node modules
+node_modules/
+jspm_packages/
+
+# Build outputs
+dist/
+build/
+out/
+*.local
+*.log
+
+# Lock files
+package-lock.json
+yarn.lock
+pnpm-lock.yaml
+
+# Optional npm cache
+.npm
+.eslintcache
+
+# Environment files
+.env
+.env.*.local
+
+# Editor directories and files
+.vscode/
+.idea/
+*.sublime-project
+*.sublime-workspace
+
+# ==========================
+# OS-specific files
+# ==========================
+.DS_Store
+Thumbs.db
+
+logs
+media
+
+django_errors.log

@@ -1,0 +1,72 @@
+{% extends "emails/base.html" %}
+
+{% block content %}
+<tr>
+    <td style="padding:20px; font-family:Arial, sans-serif; color:#e5e7eb;">
+
+        <h2 style="color:#ec4899; margin:0 0 10px 0; font-size:18px;">
+            We’ve received your message!
+        </h2>
+
+        <p style="margin:0 0 10px 0; font-size:15px;">
+            Hi there,
+        </p>
+
+        <p style="margin:0 0 15px 0; font-size:15px;">
+            Thank you for reaching out to <strong>Abegify</strong>. Our team has received your inquiry, and we’ll get back to you as soon as possible.
+        </p>
+
+        <!-- Submission Summary -->
+        <table width="100%" cellpadding="0" cellspacing="0"
+               style="background-color:#334155; padding:15px; border-left:4px solid #ec4899;">
+
+            <tr>
+                <td style="color:#ffffff; font-size:15px; padding-bottom:10px;">
+                    <strong>Submission Summary</strong>
+                </td>
+            </tr>
+
+            <tr>
+                <td style="padding-bottom:6px; font-size:14px;">
+                    <strong>Name:</strong>
+                    <span style="color:#d1d5db;">{{ name }}</span>
+                </td>
+            </tr>
+
+            <tr>
+                <td style="padding-bottom:6px; font-size:14px;">
+                    <strong>Email:</strong>
+                    <span style="color:#d1d5db;">{{ email }}</span>
+                </td>
+            </tr>
+
+            <tr>
+                <td style="padding-bottom:6px; font-size:14px;">
+                    <strong>Subject:</strong>
+                    <span style="color:#d1d5db;">{{ subject }}</span>
+                </td>
+            </tr>
+
+            <tr>
+                <td style="font-size:14px;">
+                    <strong>Message:</strong><br>
+                    <span style="color:#e5e7eb; font-style:italic;">
+                        {{ message|safe }}
+                    </span>
+                </td>
+            </tr>
+
+        </table>
+    </td>
+</tr>
+
+<tr>
+    <td style="padding:0 20px 20px 20px; font-family:Arial, sans-serif;">
+
+        <p style="font-size:13px; text-align:center; color:#94a3b8; margin:15px 0;">
+            Typically, we respond within 24–48 business hours.
+        </p>
+
+    </td>
+</tr>
+{% endblock %}
