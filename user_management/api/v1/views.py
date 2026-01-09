@@ -19,3 +19,35 @@ class UserInfoView(APIView):
         """
         serializer = UserSerializer(request.user)
         return Response(serializer.data)
+
+
+class RequestOTPView(APIView):
+    def post(self, request):
+        serializer = RequestOTPSerializer(data=request.data)
+        serializer.is_valid(raise_exception=True)
+        serializer.save()
+        return Response(
+            {"message": "OTP sent"},
+            status=status.HTTP_200_OK
+        )
+
+
+class VerifyOTPView(APIView):
+    def post(self, request):
+        serializer = VerifyOTPSerializer(data=request.data)
+        serializer.is_valid(raise_exception=True)
+        user = serializer.save()
+        return Response(
+            {"message": "Signup successful"},
+            status=status.HTTP_201_CREATED
+        )
+
+
+class LinkEmailView(APIView):
+    permission_classes = [IsAuthenticated]
+
+    def post(self, request):
+        serializer = LinkEmailSerializer(data=request.data)
+        serializer.is_valid(raise_exception=True)
+        serializer.save(request.user)
+        return Response({"message": "Email linked"})

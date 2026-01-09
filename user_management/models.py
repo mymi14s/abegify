@@ -1,68 +1,116 @@
-from datetime import datetime
 from django.utils import timezone
-from django.contrib.auth.models import AbstractBaseUser, PermissionsMixin, BaseUserManager
+from django.contrib.auth.models import (
+    AbstractBaseUser,
+    PermissionsMixin,
+    BaseUserManager
+)
 from django.db import models
-from django.forms.models import model_to_dict
-from django.db.models.fields.files import ImageFieldFile
 
-# Create your models here.
+
 class UserProfileManager(BaseUserManager):
-    """ Helps work with custom user manager."""
+    def create_user(
+        self,
+        phone_number=None,
+        email=None,
+        password=None,
+        **extra_fields
+    ):
+        """
+        Normal users:
+        - phone_number REQUIRED
+        - email OPTIONAL
+        - password NOT required (OTP based)
+        """
 
-    def create_user(self, email, first_name, last_name, password=None):
-        """Create a user object."""
+        if not phone_number and not email:
+            raise ValueError("A phone number or email must be provided")
+
+        if email:
+            email = self.normalize_email(email)
+
+        user = self.model(
+            phone_number=phone_number,
+            email=email,
+            **extra_fields
+        )
+
+        if password:
+            user.set_password(password)
+        else:
+            user.set_unusable_password()
+
+        user.save(using=self._db)
+        return user
+
+    def create_superuser(self, email, password, **extra_fields):
+        """
+        Admin users:
+        - email REQUIRED
+        - password REQUIRED
+        - phone_number OPTIONAL
+        """
 
         if not email:
-            raise ValueError('User must have an email')
+            raise ValueError("Superuser must have an email")
 
-        email = self.normalize_email(email)
-        user = self.model(email=email, first_name=first_name, last_name=last_name)
-        user.is_staff = False
-        user.set_password(password)
-        user.save(using=self._db)
+        extra_fields.setdefault('is_staff', True)
+        extra_fields.setdefault('is_superuser', True)
+        extra_fields.setdefault('is_active', True)
 
-        return user
-
-    def create_superuser(self, email, first_name, last_name, password):
-        """ Create super user."""
-
-        user = self.create_user(email=email, first_name=first_name, last_name=last_name, password=password)
-        user.is_superuser = True
-        user.is_staff = True
-        user.save(using=self._db)
-
-        return user
+        return self.create_user(
+            email=email,
+            password=password,
+            **extra_fields
+        )
 
 
 class CustomUser(AbstractBaseUser, PermissionsMixin):
-    """ User profile model."""
-    email = models.EmailField(max_length=50, unique=True)
-    first_name = models.CharField(max_length=50)
-    last_name = models.CharField(max_length=50)
+    phone_number = models.CharField(
+        max_length=15,
+        unique=True,
+        null=True,
+        blank=True
+    )
+
+    email = models.EmailField(
+        unique=True,
+        null=True,
+        blank=True
+    )
+
+    first_name = models.CharField(max_length=50, blank=True)
+    last_name = models.CharField(max_length=50, blank=True)
+
     photo = models.ImageField(upload_to='users/photos', blank=True, null=True)
-    is_active = models.BooleanField(default=True)
+
+    is_active = models.BooleanField(default=False) 
     is_staff = models.BooleanField(default=False)
     date_joined = models.DateTimeField(default=timezone.now)
 
     objects = UserProfileManager()
 
     USERNAME_FIELD = 'email'
-    REQUIRED_FIELDS = ['first_name', 'last_name']
+    REQUIRED_FIELDS = []
 
     def __str__(self):
-        return self.email
-    
+        return self.email or self.phone_number
 
-    groups = models.ManyToManyField(
-        'auth.Group',
-        related_name='customuser_set',
-        blank=True,
-        help_text='The groups this user belongs to.'
-    )
+    def clean(self):
+        if self.is_staff or self.is_superuser:
+            if not self.email:
+                raise ValidationError("Staff users must have an email")
+        else:
+            if not self.phone_number:
+                raise ValidationError("Normal users must have a phone number")
 
-    user_permissions = models.ManyToManyField(
-        'auth.Permission',
-        related_name='customuser_permissions_set',
-        blank=True,
-        help_text='Specific permissions for this user.'
-    )
+
+
+class PhoneOTP(models.Model):
+    phone_number = models.CharField(max_length=15)
+    otp = models.CharField(max_length=6)
+    created_at = models.DateTimeField(auto_now_add=True)
+
+    def is_expired(self):
+        return timezone.now() > self.created_at + timezone.timedelta(minutes=5)
+
+
