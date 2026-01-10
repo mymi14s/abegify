@@ -59,6 +59,7 @@ INSTALLED_APPS = [
     # dj-rest-auth
     'dj_rest_auth',
     'dj_rest_auth.registration',
+    'drf_spectacular',
     # CUSTOM APP
     'user_management',
     'communication',
@@ -205,7 +206,8 @@ LOGGING = {
 }
 
 REST_AUTH = {
-    'REGISTER_SERIALIZER': 'dj_rest_auth.registration.serializers.RegisterSerializer',
+    'REGISTER_SERIALIZER': 'user_management.api.v1.serializers.CustomRegisterSerializer',
+    'LOGIN_SERIALIZER': 'user_management.api.v1.serializers.CustomLoginSerializer',
 }
 
 
@@ -220,10 +222,17 @@ REST_FRAMEWORK = {
         "dj_rest_auth.jwt_auth.JWTCookieAuthentication",
     ],
     'DEFAULT_PAGINATION_CLASS': 'abegify.pagination.CustomPagination',
+    'DEFAULT_SCHEMA_CLASS': 'drf_spectacular.openapi.AutoSchema',
 }
 
 REST_USE_JWT = True
 
+SPECTACULAR_SETTINGS = {
+    'TITLE': 'Auth API',
+    'DESCRIPTION': 'Authentication and user management endpoints',
+    'VERSION': '1.0.0',
+    'SERVE_INCLUDE_SCHEMA': False,
+}
 
 SOCIALACCOUNT_PROVIDERS = {
     'google': {
@@ -242,6 +251,11 @@ SOCIALACCOUNT_PROVIDERS = {
 
 ACCOUNT_DEFAULT_HTTP_PROTOCOL = "https"
 ACCOUNT_EMAIL_VERIFICATION = "mandatory"
+ACCOUNT_USERNAME_REQUIRED = False
+ACCOUNT_AUTHENTICATION_METHOD = 'email'
+ACCOUNT_CONFIRM_EMAIL_ON_GET = False
 
 
 SOCIALACCOUNT_ADAPTER = "user_management.adapters.CustomSocialAccountAdapter"
+ACCOUNT_ADAPTER = 'user_management.adapters.CustomAccountAdapter'
+FRONTEND_URL = env.get("FRONTEND_URL")

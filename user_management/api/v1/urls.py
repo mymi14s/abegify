@@ -8,4 +8,6 @@ urlpatterns = [
     path("auth/change-email/", ChangeEmailAPIView.as_view()),
     path("auth/add-phone/", AddPhoneNumberAPIView.as_view()),
     path("auth/google/", GoogleLoginAPIView.as_view(), name="google-api-login"),
+    path("auth/verify-email-otp/", VerifyEmailOTPAPIView.as_view()),
+    path("auth/resend-email-otp/", ResendEmailOTPAPIView.as_view()),
 ]

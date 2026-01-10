@@ -29,6 +29,7 @@ class UserManager(BaseUserManager):
 
 
 class CustomUser(AbstractBaseUser, PermissionsMixin):
+    username = None
     email = models.EmailField(unique=True)
     first_name = models.CharField(max_length=50, blank=True)
     last_name = models.CharField(max_length=50, blank=True)
@@ -54,7 +55,9 @@ class EmailOTP(models.Model):
     email = models.EmailField()
     otp = models.CharField(max_length=6)
     is_used = models.BooleanField(default=False)
+    expires_at = models.DateTimeField(default=timezone.now)
     created_at = models.DateTimeField(auto_now_add=True)
 
-    def is_expired(self):
+    def is_valid(self):
         return timezone.now() > self.created_at + timezone.timedelta(minutes=10)
+

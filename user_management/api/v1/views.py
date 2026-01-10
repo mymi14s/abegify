@@ -4,31 +4,99 @@ from rest_framework.views import APIView
 from rest_framework.viewsets import GenericViewSet
 from rest_framework.response import Response
 from rest_framework.permissions import AllowAny, IsAuthenticated
+from drf_spectacular.utils import extend_schema
 
 from dj_rest_auth.registration.views import SocialLoginView
 from allauth.socialaccount.providers.google.views import GoogleOAuth2Adapter
+from django.contrib.auth import get_user_model
+from allauth.account.models import EmailAddress
+
 
 from .serializers import *
 
+User = get_user_model()
+
 class RegisterAPIView(APIView):
     permission_classes = [AllowAny]
+
+    @extend_schema(
+        request=RegisterSerializer,
+        responses={
+            200: {"detail": "OTP sent to email"},
+            400: {"detail": "Validation error"},
+        },
+        description="Register a new user and send OTP"
+    )
 
     def post(self, request):
         serializer = RegisterSerializer(data=request.data)
         serializer.is_valid(raise_exception=True)
         serializer.save(is_active=False)
-        # send OTP here
         return Response({"detail": "OTP sent to email"})
 
 
+
+@extend_schema(tags=["Authentication"])
 class LoginAPIView(APIView):
     permission_classes = [AllowAny]
+
+    @extend_schema(
+        request=LoginSerializer,
+        responses={200: {"detail": "Login successful"}},
+        description="User login"
+    )
 
     def post(self, request):
         serializer = LoginSerializer(data=request.data)
         serializer.is_valid(raise_exception=True)
         login(request, serializer.validated_data)
         return Response({"detail": "Login successful"})
+
+
+class VerifyEmailOTPAPIView(APIView):
+    """
+    Verify Email OTP
+    """
+    permission_classes = [AllowAny]
+    serializer_class = VerifyEmailOTPSerializer
+
+    def post(self, request):
+        serializer = self.serializer_class(data=request.data)
+        serializer.is_valid(raise_exception=True)
+
+        if not User.objects.filter(email=serializer.validated_data["email"]).exists():
+            return Response({"detail": "User does not exists"}, status=400)
+        
+        if not EmailOTP.objects.filter(email=serializer.validated_data["email"]).exists():
+            return Response({"detail": "Invalid OTP Verification"}, status=400)
+
+        user = User.objects.get(email=serializer.validated_data["email"])
+        record = EmailOTP.objects.get(email=user.email)
+
+        if not record.is_valid():
+            return Response({"detail": "OTP expired"}, status=400)
+
+        if record.otp != serializer.validated_data["otp"]:
+            return Response({"detail": "Invalid OTP"}, status=400)
+
+        email_address = EmailAddress.objects.get(user=user, email=user.email)
+        email_address.verified = True
+        email_address.save()
+
+        record.delete()
+        user.email_verified = True
+        user.save()
+
+        return Response({"detail": "Email verified successfully"})
+
+
+class ResendEmailOTPAPIView(APIView):
+    permission_classes = [AllowAny]
+
+    def post(self, request):
+        user = User.objects.get(email=request.data["email"])
+        send_email_otp(user)
+        return Response({"detail": "OTP resent"})
 
 
 class ForgotPasswordAPIView(APIView):
@@ -41,6 +109,12 @@ class ForgotPasswordAPIView(APIView):
 
 class ChangeEmailAPIView(APIView):
     permission_classes = [IsAuthenticated]
+
+    @extend_schema(
+        request=ChangeEmailSerializer,
+        responses={200: {"detail": "Email changed, verify again"}},
+        description="Change authenticated user's email"
+    )
 
     def post(self, request):
         serializer = ChangeEmailSerializer(data=request.data)
@@ -62,6 +136,9 @@ class AddPhoneNumberAPIView(APIView):
         return Response({"detail": "Phone number added"})
 
 
+@extend_schema(
+    description="Login with Google OAuth2"
+)
 class GoogleLoginAPIView(SocialLoginView):
     adapter_class = GoogleOAuth2Adapter
 

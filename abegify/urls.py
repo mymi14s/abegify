@@ -19,6 +19,12 @@ from django.urls import path, include
 from django.conf.urls.static import static
 from django.conf import settings
 
+from drf_spectacular.views import (
+    SpectacularAPIView,
+    SpectacularSwaggerView,
+    SpectacularRedocView,
+)
+
 from .views import home, privacy, terms
 
 admin.site.site_header = "Abegify Portal Admin"
@@ -40,7 +46,13 @@ urlpatterns = [
     path('user/', include('user_management.urls', namespace="users")),
     path('api/v1/user/', include('user_management.api.v1.urls')),
     path('api/v1/communication/', include('communication.api.v1.urls')),
+    path('api/schema/', SpectacularAPIView.as_view(), name='schema'),
+    # Swagger UI
+    path('api/docs/', SpectacularSwaggerView.as_view(url_name='schema')),
+    # ReDoc UI
+    path('api/redoc/', SpectacularRedocView.as_view(url_name='schema')),
 ]
+
 
 # Display images
 if settings.DEBUG:

@@ -1,6 +1,8 @@
 from allauth.account.adapter import DefaultAccountAdapter
 from allauth.socialaccount.adapter import DefaultSocialAccountAdapter
 from django.http import Http404
+from django.conf import settings
+
 
 class NoSignupAccountAdapter(DefaultAccountAdapter):
     def is_open_for_signup(self, request):
@@ -27,3 +29,14 @@ class CustomSocialAccountAdapter(DefaultSocialAccountAdapter):
             sociallogin.connect(request, user)
         except CustomUser.DoesNotExist:
             pass
+
+
+class CustomAccountAdapter(DefaultAccountAdapter):
+    def get_email_confirmation_url(self, request, emailconfirmation):
+        return (
+            f"{settings.FRONTEND_URL}/verify-email?"
+            f"key={emailconfirmation.key}"
+        )
+
+    def send_confirmation_mail(self, request, emailconfirmation, signup):
+        pass
