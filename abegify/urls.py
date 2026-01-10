@@ -43,7 +43,6 @@ urlpatterns = [
     path('api/auth/', include('dj_rest_auth.urls')),
     path('api/auth/registration/', include('dj_rest_auth.registration.urls')),
 
-    path('user/', include('user_management.urls', namespace="users")),
     path('api/v1/user/', include('user_management.api.v1.urls')),
     path('api/v1/communication/', include('communication.api.v1.urls')),
     path('api/schema/', SpectacularAPIView.as_view(), name='schema'),

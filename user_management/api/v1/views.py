@@ -11,6 +11,8 @@ from allauth.socialaccount.providers.google.views import GoogleOAuth2Adapter
 from django.contrib.auth import get_user_model
 from allauth.account.models import EmailAddress
 
+from user_management.utils import create_email_otp
+
 
 from .serializers import *
 
@@ -56,11 +58,16 @@ class VerifyEmailOTPAPIView(APIView):
 
 class ResendEmailOTPAPIView(APIView):
     permission_classes = [AllowAny]
+    serializer_class = ResendEmailOTPSerializer
 
     def post(self, request):
-        user = User.objects.get(email=request.data["email"])
-        send_email_otp(user)
+        serializer = self.serializer_class(data=request.data)
+        serializer.is_valid(raise_exception=True)
+        user = User.objects.get(email=serializer.validated_data["email"])
+        create_email_otp(user)
         return Response({"detail": "OTP resent"})
+
+
 
 
 class ForgotPasswordAPIView(APIView):

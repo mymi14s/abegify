@@ -6,6 +6,11 @@ from django.contrib.auth.models import (
     BaseUserManager,
 )
 
+REFERENCE_CHOICE = (
+    ("REGISTER","REGISTER"),
+    ("RESET_PASSWORD","RESET_PASSWORD")
+)
+
 class UserManager(BaseUserManager):
     def _create_user(self, email, password, **extra_fields):
         if not email:
@@ -55,8 +60,10 @@ class EmailOTP(models.Model):
     email = models.EmailField()
     otp = models.CharField(max_length=6)
     is_used = models.BooleanField(default=False)
+    reference = models.CharField(max_length=15, choices=REFERENCE_CHOICE, default='REGISTER')
     expires_at = models.DateTimeField(default=timezone.now)
     created_at = models.DateTimeField(auto_now_add=True)
+
 
     def is_valid(self):
         return  self.created_at + timezone.timedelta(minutes=10) > timezone.now()
