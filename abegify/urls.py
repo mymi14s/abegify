@@ -25,11 +25,16 @@ from drf_spectacular.views import (
     SpectacularRedocView,
 )
 
+from dj_rest_auth.views import LoginView, LogoutView, PasswordChangeView
+from dj_rest_auth.registration.views import RegisterView, SocialLoginView
+
 from .views import home, privacy, terms
 
 admin.site.site_header = "Abegify Portal Admin"
 admin.site.site_title = "Abegify Admin"
 admin.site.index_title = "Welcome to Abegify Administration"
+
+
 
 urlpatterns = [
     path('', home, name='home'),
@@ -40,8 +45,11 @@ urlpatterns = [
     path('api-auth/', include('rest_framework.urls')), 
 
     # dj-rest-auth URLs
-    path('api/auth/', include('dj_rest_auth.urls')),
-    path('api/auth/registration/', include('dj_rest_auth.registration.urls')),
+    path("api/auth/login/", LoginView.as_view(), name="rest_login"),
+    path("api/auth/logout/", LogoutView.as_view(), name="rest_logout"),
+    path("api/auth/password/change/", PasswordChangeView.as_view(), name="rest_password_change"),
+    path("api/auth/registration/", RegisterView.as_view(), name="rest_register"),
+    path("api/auth/google/", SocialLoginView.as_view(), name="google_login"),
 
     path('api/v1/user/', include('user_management.api.v1.urls')),
     path('api/v1/communication/', include('communication.api.v1.urls')),

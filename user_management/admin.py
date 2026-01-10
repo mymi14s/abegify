@@ -2,9 +2,12 @@
 from django.utils.translation import gettext, gettext_lazy as _
 from django.contrib.auth.admin import UserAdmin as BaseUserAdmin
 from django.contrib import admin
-from .models import CustomUser, EmailOTP
+from .models import CustomUser, EmailOTP, PasswordResetRequest
 # Register your models here.
 
+
+from .models import CustomUser, EmailOTP, PasswordResetRequest
+admin.site.register(PasswordResetRequest)
 
 @admin.register(CustomUser)
 class CustomUserAdmin(BaseUserAdmin):

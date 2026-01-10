@@ -2,6 +2,7 @@ from django.contrib.auth import authenticate
 from rest_framework import serializers
 from dj_rest_auth.registration.serializers import RegisterSerializer
 from dj_rest_auth.serializers import LoginSerializer
+from django.contrib.auth.password_validation import validate_password
 from user_management.models import CustomUser, EmailOTP, ReferenceChoice
 from user_management.utils import generate_otp
 
@@ -51,6 +52,11 @@ class VerifyEmailOTPSerializer(serializers.Serializer):
     email = serializers.EmailField()
     otp = serializers.CharField(max_length=6)
     reference = serializers.ChoiceField(choices=ReferenceChoice.choices)
+    
+
+class ResetPasswordSerializer(serializers.Serializer):
+    reset_token = serializers.CharField(max_length=40)
+    email = serializers.EmailField()
     password = serializers.CharField(
         write_only=True,
         required=False,
@@ -58,18 +64,18 @@ class VerifyEmailOTPSerializer(serializers.Serializer):
         style={'input_type': 'password'}
     )
 
+    def validate_password(self, value):
+        validate_password(value)
+        return value
+
+class ResetPasswordOTPSerializer(serializers.Serializer):
+    email = serializers.EmailField()
+
+
 class ResendEmailOTPSerializer(serializers.Serializer):
     email = serializers.EmailField()
     reference = serializers.ChoiceField(choices=ReferenceChoice.choices)
 
-
-class ForgotPasswordSerializer(serializers.Serializer):
-    email = serializers.EmailField()
-
-
-class ResetPasswordSerializer(serializers.Serializer):
-    token = serializers.CharField()
-    new_password = serializers.CharField()
 
 
 class ChangeEmailSerializer(serializers.Serializer):

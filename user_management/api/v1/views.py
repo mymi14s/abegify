@@ -1,4 +1,6 @@
+from uuid import uuid4
 from django.contrib.auth import login
+
 
 from rest_framework.views import APIView
 from rest_framework.viewsets import GenericViewSet
@@ -12,7 +14,7 @@ from django.contrib.auth import get_user_model
 from allauth.account.models import EmailAddress
 
 from user_management.utils import generate_otp
-from user_management.models import ReferenceChoice
+from user_management.models import ReferenceChoice, PasswordResetRequest
 
 
 from .serializers import *
@@ -37,7 +39,7 @@ class VerifyEmailOTPAPIView(APIView):
         if not EmailOTP.objects.filter(
                 email=serializer.validated_data["email"], 
                 reference=serializer.validated_data["reference"],
-                is_used=1
+                is_used=0
             ).exists():
             return Response({"detail": "Invalid OTP Verification"}, status=400)
             
@@ -45,7 +47,7 @@ class VerifyEmailOTPAPIView(APIView):
         record = EmailOTP.objects.get(
             email=user.email, 
             reference=serializer.validated_data["reference"],
-            is_used=1
+            is_used=0
         )
         if not record.is_valid():
                 return Response({"detail": "OTP expired"}, status=400)
@@ -67,11 +69,14 @@ class VerifyEmailOTPAPIView(APIView):
             return Response({"detail": "Email verified successfully"})
 
         elif serializer.validated_data["reference"] == ReferenceChoice.RESET_PASSWORD:
-            user.set_password(serializer.validated_data["password"])
-            user.save()
             record.is_used = 1
             record.save()
-            return Response({"detail": "Password reset successfully"})
+            reset_id = PasswordResetRequest.objects.create(email=record.email)
+            
+            return Response({
+                "detail": "OTP verified successfully",
+                "reset_token": reset_id.id
+            })
 
 
 class ResendEmailOTPAPIView(APIView):
@@ -86,23 +91,45 @@ class ResendEmailOTPAPIView(APIView):
         return Response({"detail": "OTP resent"})
 
 
-class ForgotPasswordAPIView(APIView):
+class ResetPasswordAPIView(APIView):
     permission_classes = [AllowAny]
-    serializer_class = ForgotPasswordSerializer
+    serializer_class = ResetPasswordSerializer
 
     def post(self, request):
         # send reset email
-        return Response({"detail": "Password reset email sent"})
+        serializer = self.serializer_class(data=request.data)
+        serializer.is_valid(raise_exception=True)
 
-class ForgotPassworOTPAPIView(APIView):
+        if not PasswordResetRequest.objects.filter(
+            id=serializer.validated_data["reset_token"],
+            email=serializer.validated_data["email"],
+            is_used=0).exists():
+            return Response({"detail": "Invalid reset token"})
+        
+        password_reset = PasswordResetRequest.objects.get(
+            id=serializer.validated_data["reset_token"],
+            email=serializer.validated_data["email"],
+            is_used=0
+        )
+        if not password_reset.is_valid():
+            return Response({"detail": "Invalid reset token"})
+
+        user = User.objects.get(email=password_reset.email)
+        user.set_password(serializer.validated_data["reset_token"])
+        user.save()
+        password_reset.is_used=1
+        password_reset.save()
+        return Response({"detail": "Password reset successful"})
+
+class ResetPasswordOTPAPIView(APIView):
     """
-    Replaces dj-rest-auth /password/reset/ endpoint
     Sends a 6-digit OTP to email instead of a reset link
     """
-    serializer_class = ForgotPasswordSerializer
+    permission_classes = [AllowAny]
+    serializer_class = ResetPasswordOTPSerializer
 
     def post(self, request):
-        serializer = PasswordResetOTPRequestSerializer(data=request.data)
+        serializer = self.serializer_class(data=request.data)
         serializer.is_valid(raise_exception=True)
 
         email = serializer.validated_data["email"]
@@ -111,8 +138,8 @@ class ForgotPassworOTPAPIView(APIView):
             return Response({"detail": "User with this email does not exist."}, status=400)
 
         generate_otp(email, reference=ReferenceChoice.RESET_PASSWORD)
+        
         return Response({"detail": "OTP sent to email."}, status=200)
-
 
 
 class ChangeEmailAPIView(APIView):

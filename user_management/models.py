@@ -65,10 +65,24 @@ class EmailOTP(models.Model):
 
     def is_valid(self):
         return  not self.is_used and self.created_at + timezone.timedelta(minutes=10) > timezone.now()
+    
+    def save(self, *args, **kwargs):
+        # Set expires_at to 10 minutes from now if not already set
+        if not self.expires_at or self.expires_at <= timezone.now():
+            self.expires_at = timezone.now() + timezone.timedelta(minutes=10)
+
+        EmailOTP.objects.filter(email=self.email, reference=self.reference).exclude(id=self.id).update(is_used=True)
+
+        super().save(*args, **kwargs)
 
 
 class PasswordResetRequest(models.Model):
-    id = models.CharField(max_length=40, primary_key=True)
+    id = models.CharField(
+        max_length=40, 
+        primary_key=True,
+        editable=False,
+        default=uuid4
+    )
     email = models.EmailField()
     is_used = models.BooleanField(default=False)
     expires_at = models.DateTimeField(default=timezone.now)
@@ -76,3 +90,10 @@ class PasswordResetRequest(models.Model):
 
     def is_valid(self):
         return  not self.is_used and self.created_at + timezone.timedelta(minutes=10) > timezone.now()
+
+    def save(self, *args, **kwargs):
+        # Set expires_at to 10 minutes from now if not already set
+        if not self.expires_at or self.expires_at <= timezone.now():
+            self.expires_at = timezone.now() + timezone.timedelta(minutes=10)
+        PasswordResetRequest.objects.filter(email=self.email).exclude(id=self.id).update(is_used=True)
+        super().save(*args, **kwargs)
