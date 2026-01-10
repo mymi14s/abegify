@@ -1,3 +1,4 @@
+from uuid import uuid4
 from django.db import models
 from django.utils import timezone
 from django.contrib.auth.models import (
@@ -5,11 +6,9 @@ from django.contrib.auth.models import (
     PermissionsMixin,
     BaseUserManager,
 )
-
-REFERENCE_CHOICE = (
-    ("REGISTER","REGISTER"),
-    ("RESET_PASSWORD","RESET_PASSWORD")
-)
+class ReferenceChoice(models.TextChoices):
+    REGISTER = "REGISTER", "REGISTER"
+    RESET_PASSWORD = "RESET_PASSWORD", "RESET_PASSWORD"
 
 class UserManager(BaseUserManager):
     def _create_user(self, email, password, **extra_fields):
@@ -60,11 +59,20 @@ class EmailOTP(models.Model):
     email = models.EmailField()
     otp = models.CharField(max_length=6)
     is_used = models.BooleanField(default=False)
-    reference = models.CharField(max_length=15, choices=REFERENCE_CHOICE, default='REGISTER')
+    reference = models.CharField(max_length=15, choices=ReferenceChoice.choices, default=ReferenceChoice.REGISTER)
     expires_at = models.DateTimeField(default=timezone.now)
     created_at = models.DateTimeField(auto_now_add=True)
 
+    def is_valid(self):
+        return  not self.is_used and self.created_at + timezone.timedelta(minutes=10) > timezone.now()
+
+
+class PasswordResetRequest(models.Model):
+    id = models.CharField(max_length=40, primary_key=True)
+    email = models.EmailField()
+    is_used = models.BooleanField(default=False)
+    expires_at = models.DateTimeField(default=timezone.now)
+    created_at = models.DateTimeField(auto_now_add=True)
 
     def is_valid(self):
-        return  self.created_at + timezone.timedelta(minutes=10) > timezone.now()
-
+        return  not self.is_used and self.created_at + timezone.timedelta(minutes=10) > timezone.now()

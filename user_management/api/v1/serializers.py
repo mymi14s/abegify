@@ -2,8 +2,8 @@ from django.contrib.auth import authenticate
 from rest_framework import serializers
 from dj_rest_auth.registration.serializers import RegisterSerializer
 from dj_rest_auth.serializers import LoginSerializer
-from user_management.models import CustomUser, EmailOTP
-from user_management.utils import create_email_otp
+from user_management.models import CustomUser, EmailOTP, ReferenceChoice
+from user_management.utils import generate_otp
 
 
 class CustomRegisterSerializer(RegisterSerializer):
@@ -33,10 +33,9 @@ class CustomRegisterSerializer(RegisterSerializer):
         """
         user = super().save(request)
 
-        create_email_otp(user)
+        generate_otp(user, ReferenceChoice.REGISTER)
 
         return user
-
 
 
 class CustomLoginSerializer(LoginSerializer):
@@ -51,9 +50,17 @@ class CustomLoginSerializer(LoginSerializer):
 class VerifyEmailOTPSerializer(serializers.Serializer):
     email = serializers.EmailField()
     otp = serializers.CharField(max_length=6)
+    reference = serializers.ChoiceField(choices=ReferenceChoice.choices)
+    password = serializers.CharField(
+        write_only=True,
+        required=False,
+        allow_blank=True,
+        style={'input_type': 'password'}
+    )
 
 class ResendEmailOTPSerializer(serializers.Serializer):
     email = serializers.EmailField()
+    reference = serializers.ChoiceField(choices=ReferenceChoice.choices)
 
 
 class ForgotPasswordSerializer(serializers.Serializer):

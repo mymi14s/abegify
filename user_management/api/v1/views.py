@@ -11,7 +11,8 @@ from allauth.socialaccount.providers.google.views import GoogleOAuth2Adapter
 from django.contrib.auth import get_user_model
 from allauth.account.models import EmailAddress
 
-from user_management.utils import create_email_otp
+from user_management.utils import generate_otp
+from user_management.models import ReferenceChoice
 
 
 from .serializers import *
@@ -31,29 +32,46 @@ class VerifyEmailOTPAPIView(APIView):
         serializer.is_valid(raise_exception=True)
 
         if not User.objects.filter(email=serializer.validated_data["email"]).exists():
-            return Response({"detail": "User does not exists"}, status=400)
-        
-        if not EmailOTP.objects.filter(email=serializer.validated_data["email"]).exists():
+                return Response({"detail": "User does not exists"}, status=400)
+            
+        if not EmailOTP.objects.filter(
+                email=serializer.validated_data["email"], 
+                reference=serializer.validated_data["reference"],
+                is_used=1
+            ).exists():
             return Response({"detail": "Invalid OTP Verification"}, status=400)
-
+            
         user = User.objects.get(email=serializer.validated_data["email"])
-        record = EmailOTP.objects.get(email=user.email)
-
+        record = EmailOTP.objects.get(
+            email=user.email, 
+            reference=serializer.validated_data["reference"],
+            is_used=1
+        )
         if not record.is_valid():
-            return Response({"detail": "OTP expired"}, status=400)
+                return Response({"detail": "OTP expired"}, status=400)
 
         if record.otp != serializer.validated_data["otp"]:
             return Response({"detail": "Invalid OTP"}, status=400)
+        
+        if serializer.validated_data["reference"] == ReferenceChoice.REGISTER:
 
-        email_address = EmailAddress.objects.get(user=user, email=user.email)
-        email_address.verified = True
-        email_address.save()
+            email_address = EmailAddress.objects.get(user=user, email=user.email)
+            email_address.verified = True
+            email_address.save()
 
-        record.delete()
-        user.email_verified = True
-        user.save()
+            record.is_used = 1
+            record.save()
+            user.email_verified = True
+            user.save()
 
-        return Response({"detail": "Email verified successfully"})
+            return Response({"detail": "Email verified successfully"})
+
+        elif serializer.validated_data["reference"] == ReferenceChoice.RESET_PASSWORD:
+            user.set_password(serializer.validated_data["password"])
+            user.save()
+            record.is_used = 1
+            record.save()
+            return Response({"detail": "Password reset successfully"})
 
 
 class ResendEmailOTPAPIView(APIView):
@@ -64,18 +82,37 @@ class ResendEmailOTPAPIView(APIView):
         serializer = self.serializer_class(data=request.data)
         serializer.is_valid(raise_exception=True)
         user = User.objects.get(email=serializer.validated_data["email"])
-        create_email_otp(user)
+        generate_otp(user, serializer.validated_data["reference"])
         return Response({"detail": "OTP resent"})
-
-
 
 
 class ForgotPasswordAPIView(APIView):
     permission_classes = [AllowAny]
+    serializer_class = ForgotPasswordSerializer
 
     def post(self, request):
         # send reset email
         return Response({"detail": "Password reset email sent"})
+
+class ForgotPassworOTPAPIView(APIView):
+    """
+    Replaces dj-rest-auth /password/reset/ endpoint
+    Sends a 6-digit OTP to email instead of a reset link
+    """
+    serializer_class = ForgotPasswordSerializer
+
+    def post(self, request):
+        serializer = PasswordResetOTPRequestSerializer(data=request.data)
+        serializer.is_valid(raise_exception=True)
+
+        email = serializer.validated_data["email"]
+
+        if not User.objects.filter(email=email).exists():
+            return Response({"detail": "User with this email does not exist."}, status=400)
+
+        generate_otp(email, reference=ReferenceChoice.RESET_PASSWORD)
+        return Response({"detail": "OTP sent to email."}, status=200)
+
 
 
 class ChangeEmailAPIView(APIView):
