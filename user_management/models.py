@@ -59,5 +59,5 @@ class EmailOTP(models.Model):
     created_at = models.DateTimeField(auto_now_add=True)
 
     def is_valid(self):
-        return timezone.now() > self.created_at + timezone.timedelta(minutes=10)
+        return  self.created_at + timezone.timedelta(minutes=10) > timezone.now()
 

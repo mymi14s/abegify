@@ -16,42 +16,6 @@ from .serializers import *
 
 User = get_user_model()
 
-class RegisterAPIView(APIView):
-    permission_classes = [AllowAny]
-
-    @extend_schema(
-        request=RegisterSerializer,
-        responses={
-            200: {"detail": "OTP sent to email"},
-            400: {"detail": "Validation error"},
-        },
-        description="Register a new user and send OTP"
-    )
-
-    def post(self, request):
-        serializer = RegisterSerializer(data=request.data)
-        serializer.is_valid(raise_exception=True)
-        serializer.save(is_active=False)
-        return Response({"detail": "OTP sent to email"})
-
-
-
-@extend_schema(tags=["Authentication"])
-class LoginAPIView(APIView):
-    permission_classes = [AllowAny]
-
-    @extend_schema(
-        request=LoginSerializer,
-        responses={200: {"detail": "Login successful"}},
-        description="User login"
-    )
-
-    def post(self, request):
-        serializer = LoginSerializer(data=request.data)
-        serializer.is_valid(raise_exception=True)
-        login(request, serializer.validated_data)
-        return Response({"detail": "Login successful"})
-
 
 class VerifyEmailOTPAPIView(APIView):
     """
