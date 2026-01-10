@@ -30,7 +30,7 @@ urlpatterns = [
     path('privacy-policy', privacy, name='privacy-policy'),
     path('terms-and-conditions', terms, name='terms-and-conditions'),
     path('admin/', admin.site.urls),
-    path('accounts/', include('allauth.urls')),
+    # path('accounts/', include('allauth.urls')),
     path('api-auth/', include('rest_framework.urls')), 
 
     # dj-rest-auth URLs
