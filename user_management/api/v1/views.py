@@ -1,53 +1,68 @@
+from django.contrib.auth import login
+
 from rest_framework.views import APIView
+from rest_framework.viewsets import GenericViewSet
 from rest_framework.response import Response
-from rest_framework import status
-from rest_framework.permissions import IsAuthenticated, AllowAny
-from django.contrib.auth.models import User
-from user_management.models import CustomUser
-from .serializers import UserSerializer
+from rest_framework.permissions import AllowAny, IsAuthenticated
 
-class UserInfoView(APIView):
-    """
-    API endpoint to get information about the currently logged-in user.
-    Requires authentication.
-    """
-    permission_classes = [IsAuthenticated]
+from dj_rest_auth.registration.views import SocialLoginView
+from allauth.socialaccount.providers.google.views import GoogleOAuth2Adapter
 
-    def get(self, request):
-        """
-        Returns the serialized data of the authenticated user.
-        """
-        serializer = UserSerializer(request.user)
-        return Response(serializer.data)
+from .serializers import *
 
+class RegisterAPIView(APIView):
+    permission_classes = [AllowAny]
 
-class RequestOTPView(APIView):
     def post(self, request):
-        serializer = RequestOTPSerializer(data=request.data)
+        serializer = RegisterSerializer(data=request.data)
         serializer.is_valid(raise_exception=True)
-        serializer.save()
-        return Response(
-            {"message": "OTP sent"},
-            status=status.HTTP_200_OK
-        )
+        serializer.save(is_active=False)
+        # send OTP here
+        return Response({"detail": "OTP sent to email"})
 
 
-class VerifyOTPView(APIView):
+class LoginAPIView(APIView):
+    permission_classes = [AllowAny]
+
     def post(self, request):
-        serializer = VerifyOTPSerializer(data=request.data)
+        serializer = LoginSerializer(data=request.data)
         serializer.is_valid(raise_exception=True)
-        user = serializer.save()
-        return Response(
-            {"message": "Signup successful"},
-            status=status.HTTP_201_CREATED
-        )
+        login(request, serializer.validated_data)
+        return Response({"detail": "Login successful"})
 
 
-class LinkEmailView(APIView):
+class ForgotPasswordAPIView(APIView):
+    permission_classes = [AllowAny]
+
+    def post(self, request):
+        # send reset email
+        return Response({"detail": "Password reset email sent"})
+
+
+class ChangeEmailAPIView(APIView):
     permission_classes = [IsAuthenticated]
 
     def post(self, request):
-        serializer = LinkEmailSerializer(data=request.data)
+        serializer = ChangeEmailSerializer(data=request.data)
         serializer.is_valid(raise_exception=True)
-        serializer.save(request.user)
-        return Response({"message": "Email linked"})
+        request.user.email = serializer.validated_data["new_email"]
+        request.user.email_verified = False
+        request.user.save()
+        return Response({"detail": "Email changed, verify again"})
+
+
+class AddPhoneNumberAPIView(APIView):
+    permission_classes = [IsAuthenticated]
+
+    def post(self, request):
+        serializer = PhoneNumberSerializer(data=request.data)
+        serializer.is_valid(raise_exception=True)
+        request.user.phone_number = serializer.validated_data["phone_number"]
+        request.user.save()
+        return Response({"detail": "Phone number added"})
+
+
+class GoogleLoginAPIView(SocialLoginView):
+    adapter_class = GoogleOAuth2Adapter
+
+

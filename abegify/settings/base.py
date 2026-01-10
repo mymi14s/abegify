@@ -45,12 +45,14 @@ INSTALLED_APPS = [
     'django.contrib.sessions',
     'django.contrib.messages',
     'django.contrib.staticfiles',
+    'django.contrib.sites',
     # THIRD PARTY
     'corsheaders',
     "django_tasks",
     'allauth',
     'allauth.account',
     'allauth.socialaccount',
+    "allauth.socialaccount.providers.google",
     # Django REST Framework
     'rest_framework',
     'rest_framework.authtoken',
@@ -61,6 +63,8 @@ INSTALLED_APPS = [
     'user_management',
     'communication',
 ]
+
+SITE_ID = 1
 
 MIDDLEWARE = [
     'django.middleware.security.SecurityMiddleware',
@@ -213,7 +217,31 @@ REST_FRAMEWORK = {
         'rest_framework.authentication.TokenAuthentication',
         'rest_framework.authentication.SessionAuthentication',
         'rest_framework.authentication.BasicAuthentication',
+        "dj_rest_auth.jwt_auth.JWTCookieAuthentication",
     ],
     'DEFAULT_PAGINATION_CLASS': 'abegify.pagination.CustomPagination',
 }
 
+REST_USE_JWT = True
+
+
+SOCIALACCOUNT_PROVIDERS = {
+    'google': {
+        'SCOPE': [
+            'profile',
+            'email',
+        ],
+        'AUTH_PARAMS': {
+            'access_type': 'offline',
+        },
+        'OAUTH_PKCE_ENABLED': True,
+        'FETCH_USERINFO' : True
+    }
+}
+
+
+ACCOUNT_DEFAULT_HTTP_PROTOCOL = "https"
+ACCOUNT_EMAIL_VERIFICATION = "mandatory"
+
+
+SOCIALACCOUNT_ADAPTER = "user_management.adapters.CustomSocialAccountAdapter"

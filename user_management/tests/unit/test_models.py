@@ -23,3 +23,10 @@ def test_superuser_creation():
     )
     assert admin.is_superuser
     assert admin.is_staff
+
+
+
+def test_user_creation(db):
+    user = UserFactory()
+    assert user.email
+    assert user.check_password("password123")

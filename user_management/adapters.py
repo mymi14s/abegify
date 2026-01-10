@@ -1,4 +1,5 @@
 from allauth.account.adapter import DefaultAccountAdapter
+from allauth.socialaccount.adapter import DefaultSocialAccountAdapter
 from django.http import Http404
 
 class NoSignupAccountAdapter(DefaultAccountAdapter):
@@ -9,3 +10,20 @@ class NoSignupAccountAdapter(DefaultAccountAdapter):
     def respond_user_inactive(self, request, user):
         # Optional: handle inactive users differently
         raise Http404
+
+
+class CustomSocialAccountAdapter(DefaultSocialAccountAdapter):
+    def pre_social_login(self, request, sociallogin):
+        if sociallogin.user.id:
+            return
+
+        email = sociallogin.account.extra_data.get("email")
+        if not email:
+            return
+
+        from user_management.models import CustomUser
+        try:
+            user = CustomUser.objects.get(email=email)
+            sociallogin.connect(request, user)
+        except CustomUser.DoesNotExist:
+            pass

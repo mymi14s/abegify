@@ -6,7 +6,7 @@ STATICFILES_DIRS = [
     BASE_DIR / "static", 
 ]
 
-ALLOWED_HOSTS = ["*"]
+ALLOWED_HOSTS = ["*", "careful-possum-suitable.ngrok-free.app"]
 
 INSTALLED_APPS += [
     "django_tasks.backends.database",
@@ -37,6 +37,7 @@ CORS_ALLOWED_ORIGINS = [
     "http://localhost:8000",
     "http://127.0.0.1:8000",
     "http://0.0.0.0:8000",
+    "https://careful-possum-suitable.ngrok-free.app",
 ]
 CSRF_TRUSTED_ORIGINS = [
     "http://localhost:3000",
@@ -45,6 +46,7 @@ CSRF_TRUSTED_ORIGINS = [
     "http://localhost:8000",
     "http://127.0.0.1:8000",
     "http://0.0.0.0:8000",
+    "https://careful-possum-suitable.ngrok-free.app",
 ]
 
 TASKS = {

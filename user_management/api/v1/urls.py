@@ -1,14 +1,11 @@
-
 from django.urls import path
-from .views import (
-    UserInfoView, RequestOTPView, VerifyOTPView, LinkEmailView,
-)
-
-app_name = 'user_management'
+from .views import *
 
 urlpatterns = [
-    path('info/', UserInfoView.as_view(), name='user-info'),
-    path('auth/request-otp/', RequestOTPView.as_view()),
-    path('auth/verify-otp/', VerifyOTPView.as_view()),
-    path('auth/link-email/', LinkEmailView.as_view()),
+    path("auth/register/", RegisterAPIView.as_view()),
+    path("auth/login/", LoginAPIView.as_view()),
+    path("auth/forgot-password/", ForgotPasswordAPIView.as_view()),
+    path("auth/change-email/", ChangeEmailAPIView.as_view()),
+    path("auth/add-phone/", AddPhoneNumberAPIView.as_view()),
+    path("auth/google/", GoogleLoginAPIView.as_view(), name="google-api-login"),
 ]
